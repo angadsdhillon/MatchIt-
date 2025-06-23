@@ -85,7 +85,7 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
       industry: row.industry || row.sector || '',
       employeeCount: row.employee_count ? parseInt(row.employee_count) : undefined,
       revenue: row.revenue || '',
-      founded: row.founded ? parseInt(row.founded) : undefined,
+      founded: row.founded_year ? parseInt(row.founded_year) : (row.founded ? parseInt(row.founded) : undefined),
       city: row.city || '',
       state: row.state || row.province || '',
       country: row.country || '',
@@ -324,18 +324,6 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
             <p className="text-blue-700 mb-2">Required fields: full_name (or first_name + last_name), title, company</p>
             <p className="text-blue-600">Optional: email, phone, linkedin_url, department, seniority, location</p>
           </div>
-        </div>
-        
-        {/* Quick Test Section */}
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <h5 className="font-medium text-blue-800 mb-2">Quick Test</h5>
-          <p className="text-blue-600 text-sm mb-2">
-            Use the sample data files in the <code className="bg-blue-100 px-1 rounded">sample-data/</code> folder to test the application:
-          </p>
-          <ul className="text-blue-600 text-sm space-y-1">
-            <li>• <code className="bg-blue-100 px-1 rounded">companies.csv</code> - Sample company data</li>
-            <li>• <code className="bg-blue-100 px-1 rounded">people.csv</code> - Sample people data</li>
-          </ul>
         </div>
       </div>
     </div>

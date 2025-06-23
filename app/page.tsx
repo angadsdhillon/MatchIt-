@@ -27,6 +27,7 @@ export default function Dashboard() {
     priority: [] as string[],
     searchTerm: ''
   });
+  const [expandCompanyId, setExpandCompanyId] = useState<string | undefined>(undefined);
 
   // Merge datasets when both are loaded
   useEffect(() => {
@@ -100,6 +101,12 @@ export default function Dashboard() {
     return [headers, ...rows].map(row => row.join(',')).join('\n');
   };
 
+  // Function to handle map click to expand company in table
+  const handleExpandCompanyFromMap = (companyId: string) => {
+    setActiveTab('companies');
+    setExpandCompanyId(companyId);
+  };
+
   if (!isDataLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -109,31 +116,37 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
+            {/* Logo and App Name */}
+            <div className="flex flex-col items-center mb-8">
+              <span className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-lg mb-4">
+                <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="28" cy="28" r="28" fill="#3b82f6"/>
+                  <text x="13" y="38" fontFamily="'Inter',sans-serif" fontWeight="bold" fontSize="32" fill="white">M</text>
+                  <polyline points="32,36 39,43 48,27" fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <h1 className="text-5xl font-extrabold text-blue-700 tracking-tight mb-2">MatchIt!</h1>
+              <p className="text-lg text-gray-500 font-medium">The Sales Intelligence Dashboard</p>
+              <span className="mt-3 text-base font-semibold text-blue-400 tracking-wide" style={{ letterSpacing: '0.04em' }}>By Angad Dhillon</span>
+            </div>
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                PIT Solutions Sales Intelligence Dashboard
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Transform your company and people datasets into actionable sales insights. 
-                Upload your Success AI data and get comprehensive intelligence for your sales team.
+              <p className="text-xl text-gray-700 max-w-2xl mx-auto">
+                Upload your company and people datasets to instantly generate actionable sales insights. <br />
+                Visualize, filter, and target your best prospects with ease.
               </p>
             </div>
-            
             <DataUpload onDataUpload={handleDataUpload} />
-            
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <Upload className="w-8 h-8 text-blue-600 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Upload Datasets</h3>
-                <p className="text-gray-600">Import your company and people data from Success AI or other sources</p>
+                <p className="text-gray-600">Import your company and people data from any source</p>
               </div>
-              
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <BarChart3 className="w-8 h-8 text-green-600 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Analyze Insights</h3>
                 <p className="text-gray-600">Get comprehensive analytics and sales fit scoring</p>
               </div>
-              
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <Target className="w-8 h-8 text-purple-600 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Target Prospects</h3>
@@ -218,18 +231,18 @@ export default function Dashboard() {
                 <DashboardStats data={filteredData} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Charts data={filteredData} />
-                  <CompanyMap data={filteredData} />
+                  <CompanyMap data={filteredData} onCompanyClick={handleExpandCompanyFromMap} />
                 </div>
               </div>
             )}
 
             {activeTab === 'companies' && (
-              <DataTable data={filteredData} />
+              <DataTable data={filteredData} expandCompanyId={expandCompanyId} />
             )}
 
             {activeTab === 'map' && (
               <div className="space-y-6">
-                <CompanyMap data={filteredData} />
+                <CompanyMap data={filteredData} onCompanyClick={handleExpandCompanyFromMap} />
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-semibold mb-4">Geographic Distribution</h3>
                   <p className="text-gray-600">

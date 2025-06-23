@@ -126,16 +126,17 @@ export function generateDashboardStats(mergedData: MergedData[]): DashboardStats
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
   
-  // Geographic distribution
+  // Geographic distribution (all states/provinces with companies)
   const locationCounts: { [key: string]: number } = {};
   mergedData.forEach(item => {
-    const location = item.company.state || item.company.country || 'Unknown';
-    locationCounts[location] = (locationCounts[location] || 0) + 1;
+    const state = item.company.state;
+    if (state && state.trim() !== '') {
+      locationCounts[state] = (locationCounts[state] || 0) + 1;
+    }
   });
   const geographicDistribution = Object.entries(locationCounts)
     .map(([location, count]) => ({ location, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+    .sort((a, b) => b.count - a.count);
   
   // Contact role distribution
   const roleCounts: { [key: string]: number } = {};
@@ -179,8 +180,8 @@ export function generateFilterOptions(mergedData: MergedData[]): FilterOptions {
     }
     
     if (item.company.industry) industries.add(item.company.industry);
-    if (item.company.state) locations.add(item.company.state);
-    if (item.company.country) locations.add(item.company.country);
+    // Only add non-empty states/provinces for location filter
+    if (item.company.state && item.company.state.trim() !== '') locations.add(item.company.state);
     
     item.contacts.forEach(contact => {
       if (contact.seniority) seniority.add(contact.seniority);
@@ -200,30 +201,82 @@ export function generateFilterOptions(mergedData: MergedData[]): FilterOptions {
   };
 }
 
-// Generate map data for visualization
-export function generateMapData(mergedData: MergedData[]): MapData[] {
-  // This would typically use a geocoding service to get lat/lng
-  // For demo purposes, we'll use mock coordinates
-  const mockCoordinates = [
-    { lat: 40.7128, lng: -74.0060 }, // NYC
-    { lat: 34.0522, lng: -118.2437 }, // LA
-    { lat: 41.8781, lng: -87.6298 }, // Chicago
-    { lat: 29.7604, lng: -95.3698 }, // Houston
-    { lat: 33.4484, lng: -112.0740 }, // Phoenix
-    { lat: 39.7392, lng: -104.9903 }, // Denver
-    { lat: 37.7749, lng: -122.4194 }, // San Francisco
-    { lat: 47.6062, lng: -122.3321 }, // Seattle
-    { lat: 25.7617, lng: -80.1918 }, // Miami
-    { lat: 32.7767, lng: -96.7970 }, // Dallas
-  ];
-  
-  return mergedData.slice(0, 10).map((item, index) => ({
-    lat: mockCoordinates[index % mockCoordinates.length].lat,
-    lng: mockCoordinates[index % mockCoordinates.length].lng,
-    company: item.company,
-    contactCount: item.contactCount,
-    priority: item.priority
-  }));
+// --- Geocoding utility ---
+
+// In-memory cache for geocoding results
+const geocodeCache: { [key: string]: { lat: number; lng: number } } = {};
+
+/**
+ * Geocode a city/state/country string using OpenStreetMap Nominatim API.
+ * Returns { lat, lng } or null if not found.
+ */
+export async function geocodeLocation(city: string, state: string, country: string): Promise<{ lat: number; lng: number } | null> {
+  const query = [city, state, country].filter(Boolean).join(', ');
+  if (geocodeCache[query]) return geocodeCache[query];
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'PIT-Solutions-Sales-Intelligence/1.0' } });
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const { lat, lon } = data[0];
+      const coords = { lat: parseFloat(lat), lng: parseFloat(lon) };
+      geocodeCache[query] = coords;
+      return coords;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Generate map data for visualization, grouped by city/state/country.
+ * Each marker represents a city, with a list of companies and count.
+ * This function is async and returns a Promise.
+ */
+export async function generateMapDataWithGeocoding(mergedData: MergedData[]): Promise<CityMapData[]> {
+  // Group companies by city/state/country
+  const cityGroups: { [key: string]: { companies: MergedData[]; city: string; state: string; country: string } } = {};
+  mergedData.forEach(item => {
+    const city = item.company.city || '';
+    const state = item.company.state || '';
+    const country = item.company.country || '';
+    const key = [city, state, country].filter(Boolean).join(', ');
+    if (!cityGroups[key]) {
+      cityGroups[key] = { companies: [], city, state, country };
+    }
+    cityGroups[key].companies.push(item);
+  });
+
+  // Geocode each city group
+  const results: CityMapData[] = [];
+  for (const key in cityGroups) {
+    const { city, state, country, companies } = cityGroups[key];
+    const coords = await geocodeLocation(city, state, country);
+    if (coords) {
+      results.push({
+        lat: coords.lat,
+        lng: coords.lng,
+        city,
+        state,
+        country,
+        companies,
+        count: companies.length
+      });
+    }
+  }
+  return results;
+}
+
+// --- Types for map clustering ---
+export interface CityMapData {
+  lat: number;
+  lng: number;
+  city: string;
+  state: string;
+  country: string;
+  companies: MergedData[];
+  count: number;
 }
 
 // Filter merged data based on criteria

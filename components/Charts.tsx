@@ -31,7 +31,7 @@ export default function Charts({ data }: ChartsProps) {
     value: item.count
   }));
 
-  const locationData = stats.geographicDistribution.slice(0, 8).map(item => ({
+  const locationData = stats.geographicDistribution.map(item => ({
     name: item.location,
     value: item.count
   }));

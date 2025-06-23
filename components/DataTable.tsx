@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ChevronUp, 
@@ -19,16 +19,33 @@ import { MergedData } from '../types';
 
 interface DataTableProps {
   data: MergedData[];
+  expandCompanyId?: string;
 }
 
 type SortField = 'company' | 'industry' | 'employeeCount' | 'salesFitScore' | 'priority' | 'contactCount';
 type SortDirection = 'asc' | 'desc';
 
-export default function DataTable({ data }: DataTableProps) {
+export default function DataTable({ data, expandCompanyId }: DataTableProps) {
   const [sortField, setSortField] = useState<SortField>('salesFitScore');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showContactDetails, setShowContactDetails] = useState(true);
+
+  const rowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
+
+  useEffect(() => {
+    if (expandCompanyId) {
+      setExpandedRows(prev => {
+        const newSet = new Set(prev);
+        newSet.add(expandCompanyId);
+        return newSet;
+      });
+      setTimeout(() => {
+        const row = rowRefs.current[expandCompanyId];
+        if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [expandCompanyId]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -132,6 +149,9 @@ export default function DataTable({ data }: DataTableProps) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Company
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Founded
+              </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('industry')}
@@ -196,6 +216,7 @@ export default function DataTable({ data }: DataTableProps) {
             {sortedData.map((item, index) => [
               <motion.tr
                 key={item.company.id}
+                ref={el => { rowRefs.current[item.company.id] = el; }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -232,6 +253,9 @@ export default function DataTable({ data }: DataTableProps) {
                       )}
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {item.company.founded ? item.company.founded : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {item.company.industry || 'N/A'}

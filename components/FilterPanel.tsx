@@ -129,7 +129,7 @@ export default function FilterPanel({ data, filters, onFilterChange }: FilterPan
                 placeholder="Search companies or contacts..."
                 value={localFilters.searchTerm}
                 onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function FilterPanel({ data, filters, onFilterChange }: FilterPan
               Locations
             </label>
             <div className="max-h-32 overflow-y-auto space-y-2">
-              {filterOptions.locations.slice(0, 10).map((location: string) => (
+              {filterOptions.locations.map((location: string) => (
                 <label key={location} className="flex items-center">
                   <input
                     type="checkbox"
@@ -198,7 +198,7 @@ export default function FilterPanel({ data, filters, onFilterChange }: FilterPan
                     onChange={(e) => {
                       const newLocations = e.target.checked
                         ? [...localFilters.locations, location]
-                        : localFilters.locations.filter(l => l !== location);
+                        : localFilters.locations.filter((l: string) => l !== location);
                       handleFilterChange('locations', newLocations);
                     }}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
