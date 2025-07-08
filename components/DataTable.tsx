@@ -16,6 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { MergedData } from '../types';
+import JobPostings from './JobPostings';
 
 interface DataTableProps {
   data: MergedData[];
@@ -142,7 +143,7 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-white">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -319,69 +320,80 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
                           <span>Sales Fit Score: {item.salesFitScore}/100</span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {item.contacts.map((contact) => (
-                          <div key={contact.id} className="bg-white rounded-lg border p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <h5 className="font-medium text-gray-900">{contact.fullName}</h5>
-                                <p className="text-sm text-gray-600">{contact.title}</p>
-                                {contact.department && (
-                                  <p className="text-xs text-gray-500">{contact.department}</p>
-                                )}
+                      <div className="space-y-6">
+                        {/* Contacts Section */}
+                        <div>
+                          <h5 className="text-md font-semibold text-gray-900 mb-3">Company Contacts</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {item.contacts.map((contact) => (
+                              <div key={contact.id} className="bg-white rounded-lg border p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h5 className="font-medium text-gray-900">{contact.fullName}</h5>
+                                    <p className="text-sm text-gray-600">{contact.title}</p>
+                                    {contact.department && (
+                                      <p className="text-xs text-gray-500">{contact.department}</p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    {contact.seniority && (
+                                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {contact.seniority}
+                                      </span>
+                                    )}
+                                    {contact.decisionMaker && (
+                                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Decision Maker
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  {contact.email && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <Mail className="w-3 h-3 mr-2" />
+                                      <a href={`mailto:${contact.email}`} className="hover:text-blue-600">
+                                        {contact.email}
+                                      </a>
+                                    </div>
+                                  )}
+                                  {contact.phone && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <Phone className="w-3 h-3 mr-2" />
+                                      <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                                        {contact.phone}
+                                      </a>
+                                    </div>
+                                  )}
+                                  {contact.linkedinUrl && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <ExternalLink className="w-3 h-3 mr-2" />
+                                      <a 
+                                        href={contact.linkedinUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:text-blue-600"
+                                      >
+                                        LinkedIn Profile
+                                      </a>
+                                    </div>
+                                  )}
+                                  {contact.contactScore && (
+                                    <div className="flex items-center text-sm text-gray-600">
+                                      <Target className="w-3 h-3 mr-2" />
+                                      <span>Contact Score: {contact.contactScore}/100</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-1">
-                                {contact.seniority && (
-                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    {contact.seniority}
-                                  </span>
-                                )}
-                                {contact.decisionMaker && (
-                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                    Decision Maker
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              {contact.email && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Mail className="w-3 h-3 mr-2" />
-                                  <a href={`mailto:${contact.email}`} className="hover:text-blue-600">
-                                    {contact.email}
-                                  </a>
-                                </div>
-                              )}
-                              {contact.phone && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Phone className="w-3 h-3 mr-2" />
-                                  <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
-                                    {contact.phone}
-                                  </a>
-                                </div>
-                              )}
-                              {contact.linkedinUrl && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <ExternalLink className="w-3 h-3 mr-2" />
-                                  <a 
-                                    href={contact.linkedinUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:text-blue-600"
-                                  >
-                                    LinkedIn Profile
-                                  </a>
-                                </div>
-                              )}
-                              {contact.contactScore && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Target className="w-3 h-3 mr-2" />
-                                  <span>Contact Score: {contact.contactScore}/100</span>
-                                </div>
-                              )}
-                            </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Job Postings Section */}
+                        <div className="border-t pt-6">
+                          <JobPostings companyName={item.company.name} />
+                        </div>
                       </div>
                     </motion.div>
                   </td>

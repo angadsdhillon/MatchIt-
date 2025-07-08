@@ -72,4 +72,18 @@ export interface MapData {
   company: Company;
   contactCount: number;
   priority: string;
+}
+
+export interface JobPosting {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  url: string;
+  postedDate: string;
+  salary?: string;
+  jobType?: string;
+  experience?: string;
+  skills?: string[];
 } 
