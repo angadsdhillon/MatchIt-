@@ -26,50 +26,55 @@ The app now includes a job postings feature that displays current software engin
   - Direct links to apply
   - Posted date
 
-### Current Implementation
+### Real API Integration
 
-The app currently uses mock data for demonstration purposes. The job postings are stored in `utils/jobService.ts` and include sample data for:
-- TechCorp Solutions
-- DataFlow Systems  
-- InnovateTech Inc
+The app now supports real job posting APIs with automatic fallback to mock data. See `ENV_SETUP.md` for complete setup instructions.
 
-### Integrating Real Job APIs
+#### Currently Integrated APIs:
 
-To integrate with real job posting APIs, you can modify the `fetchJobPostingsFromAPI` function in `utils/jobService.ts`. Here are some options:
+1. **Adzuna API** (Free tier available)
+   - 1,000 requests/month free
+   - Sign up at https://developer.adzuna.com/
+   - Provides salary, location, and detailed job info
 
-#### Indeed API
-```typescript
-// You'll need to sign up for Indeed's API
-const response = await fetch(`https://api.indeed.com/v2/jobs?query=software+engineer&company=${encodeURIComponent(companyName)}`, {
-  headers: {
-    'Authorization': `Bearer ${YOUR_INDEED_API_KEY}`,
-    'Content-Type': 'application/json'
-  }
-});
+2. **GitHub Jobs API** (Free, deprecated but accessible)
+   - No API key required
+   - Limited data but good for testing
+
+3. **Web Scraping** (Via Next.js API route)
+   - Scrapes company career pages
+   - Bypasses CORS restrictions
+   - Extensible for custom company pages
+
+#### Quick Setup:
+
+1. Create `.env.local` file:
+```env
+NEXT_PUBLIC_ADZUNA_APP_ID=your_app_id_here
+NEXT_PUBLIC_ADZUNA_API_KEY=your_api_key_here
 ```
 
-#### LinkedIn Jobs API
-```typescript
-// LinkedIn requires OAuth 2.0 authentication
-const response = await fetch(`https://api.linkedin.com/v2/jobs?keywords=software+engineer&company=${encodeURIComponent(companyName)}`, {
-  headers: {
-    'Authorization': `Bearer ${LINKEDIN_ACCESS_TOKEN}`,
-    'Content-Type': 'application/json'
-  }
-});
-```
+2. Restart the development server
+3. Upload sample data and test job postings
 
-#### Alternative: Web Scraping
-For companies without public APIs, you could implement web scraping using libraries like Puppeteer or Cheerio to extract job postings from company career pages.
+#### API Priority:
+1. Adzuna API (if configured)
+2. GitHub Jobs API
+3. Web scraping via `/api/jobs`
+4. Mock data (fallback)
 
 ### Environment Variables
 
-If you integrate real APIs, add your API keys to a `.env.local` file:
+Required for real API integration:
 
 ```env
-INDEED_API_KEY=your_indeed_api_key
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+# Adzuna API (Recommended - Free tier available)
+NEXT_PUBLIC_ADZUNA_APP_ID=your_adzuna_app_id
+NEXT_PUBLIC_ADZUNA_API_KEY=your_adzuna_api_key
+
+# Web Scraping Services (Optional)
+SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
+BRIGHT_DATA_API_KEY=your_bright_data_api_key
 ```
 
 ## Technology Stack
