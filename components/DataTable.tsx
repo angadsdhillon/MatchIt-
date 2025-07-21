@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { MergedData } from '../types';
 import JobPostings from './JobPostings';
+import ChatAI from './ChatAI';
 
 interface DataTableProps {
   data: MergedData[];
@@ -31,6 +32,7 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showContactDetails, setShowContactDetails] = useState(true);
+  const [openChatRows, setOpenChatRows] = useState<Set<string>>(new Set());
 
   const rowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
 
@@ -65,6 +67,16 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
       newExpanded.add(companyId);
     }
     setExpandedRows(newExpanded);
+  };
+
+  const toggleChatRow = (companyId: string) => {
+    const newOpenChats = new Set(openChatRows);
+    if (newOpenChats.has(companyId)) {
+      newOpenChats.delete(companyId);
+    } else {
+      newOpenChats.add(companyId);
+    }
+    setOpenChatRows(newOpenChats);
   };
 
   const sortedData = [...data].sort((a, b) => {
@@ -296,9 +308,15 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => toggleRowExpansion(item.company.id)}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="text-blue-600 hover:text-blue-900 mr-4"
                   >
                     {expandedRows.has(item.company.id) ? 'Hide' : 'View'} Details
+                  </button>
+                  <button
+                    onClick={() => toggleChatRow(item.company.id)}
+                    className="text-green-600 hover:text-green-900"
+                  >
+                    {openChatRows.has(item.company.id) ? 'Close AI' : 'Ask AI'}
                   </button>
                 </td>
               </motion.tr>,
@@ -396,6 +414,18 @@ export default function DataTable({ data, expandCompanyId }: DataTableProps) {
                         </div>
                       </div>
                     </motion.div>
+                  </td>
+                </tr>
+              ),
+              openChatRows.has(item.company.id) && (
+                <tr key={`ai-chat-${item.company.id}`}>
+                  <td colSpan={8} className="bg-gray-50 p-0">
+                    <div className="p-6 border-b last:border-b-0">
+                      <ChatAI 
+                        company={item.company} 
+                        onClose={() => toggleChatRow(item.company.id)} 
+                      />
+                    </div>
                   </td>
                 </tr>
               )
