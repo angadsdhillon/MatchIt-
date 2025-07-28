@@ -65,8 +65,8 @@ export default function GeminiChat() {
       <div className="mb-4">
         <input
           ref={inputRef}
-          className="w-full border rounded-md px-4 py-2 text-sm text-gray-900 bg-gray-50 cursor-pointer"
-          placeholder="Ask Gemini..."
+          className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900 bg-white hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer shadow-sm transition-colors"
+          placeholder="Ask Gemini anything..."
           onFocus={() => setExpanded(true)}
           readOnly
         />
