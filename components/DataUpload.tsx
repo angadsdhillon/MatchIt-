@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Users, Building2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Users, Building2, CheckCircle, AlertCircle, Download, Info } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { Company, Person } from '../types';
@@ -20,6 +20,15 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
   
   const companiesFileRef = useRef<HTMLInputElement>(null);
   const peopleFileRef = useRef<HTMLInputElement>(null);
+
+  const downloadSampleData = (type: 'companies' | 'people') => {
+    const link = document.createElement('a');
+    link.href = `/sample-data/${type}.csv`;
+    link.download = `${type}-sample.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const processFile = (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
@@ -78,13 +87,21 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
 
   const normalizeCompanyData = (data: any[]): Company[] => {
     console.log('Normalizing company data:', data.length, 'rows');
-    return data.map((row, index) => ({
+    
+    // Log the first few rows to see the structure
+    console.log('First 3 rows structure:', data.slice(0, 3).map(row => ({
+      name: row.name,
+      email_status: row.email_status,
+      website: row.website
+    })));
+    
+    const normalized = data.map((row, index) => ({
       id: row.id || `company-${index}`,
       name: row.name || row.company_name || row.company || '',
       website: row.website || row.url || '',
       industry: row.industry || row.sector || '',
       employeeCount: row.employee_count ? parseInt(row.employee_count) : undefined,
-      revenue: row.revenue || '',
+      revenue: row.revenue || row.annual_revenue || '',
       founded: row.founded_year ? parseInt(row.founded_year) : (row.founded ? parseInt(row.founded) : undefined),
       city: row.city || '',
       state: row.state || row.province || '',
@@ -97,12 +114,39 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
       technologies: row.technologies ? row.technologies.split(',').map((t: string) => t.trim()) : [],
       funding: row.funding || '',
       lastUpdated: row.last_updated || row.updated_at || ''
-    })).filter(company => company.name.trim() !== '');
+    }));
+    
+    // Filter out rows with empty names and log the results
+    // Only filter out if name is completely empty, not if it has some content
+    const filtered = normalized.filter(company => {
+      const hasName = company.name && company.name.trim() !== '';
+      const hasWebsite = company.website && company.website.trim() !== '';
+      const hasIndustry = company.industry && company.industry.trim() !== '';
+      
+      // Keep companies that have at least a name, or if no name, at least a website or industry
+      return hasName || hasWebsite || hasIndustry;
+    });
+    
+    console.log(`Filtered companies: ${filtered.length} out of ${normalized.length} (removed ${normalized.length - filtered.length} invalid entries)`);
+    
+    // Log some examples of filtered out companies
+    const emptyEntries = normalized.filter(company => {
+      const hasName = company.name && company.name.trim() !== '';
+      const hasWebsite = company.website && company.website.trim() !== '';
+      const hasIndustry = company.industry && company.industry.trim() !== '';
+      return !(hasName || hasWebsite || hasIndustry);
+    });
+    
+    if (emptyEntries.length > 0) {
+      console.log('Examples of companies with no valid data:', emptyEntries.slice(0, 3));
+    }
+    
+    return filtered;
   };
 
   const normalizePeopleData = (data: any[]): Person[] => {
     console.log('Normalizing people data:', data.length, 'rows');
-    return data.map((row, index) => ({
+    const normalized = data.map((row, index) => ({
       id: row.id || `person-${index}`,
       firstName: row.first_name || row.firstname || '',
       lastName: row.last_name || row.lastname || '',
@@ -110,7 +154,7 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
       title: row.title || row.job_title || row.position || '',
       company: row.company || row.company_name || '',
       email: row.email || '',
-      phone: row.phone || row.telephone || '',
+      phone: row.phone || row.telephone || row.phone_numbers || '',
       linkedinUrl: row.linkedin_url || row.linkedin || '',
       department: row.department || '',
       seniority: row.seniority || row.level || '',
@@ -118,7 +162,33 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
       lastUpdated: row.last_updated || row.updated_at || '',
       decisionMaker: row.decision_maker === 'true' || row.decision_maker === true,
       contactScore: row.contact_score ? parseInt(row.contact_score) : Math.floor(Math.random() * 100) + 1
-    })).filter(person => person.fullName.trim() !== '' && person.company.trim() !== '');
+    }));
+    
+    // Filter out rows with empty names or companies and log the results
+    const filtered = normalized.filter(person => {
+      const hasName = person.fullName && person.fullName.trim() !== '';
+      const hasCompany = person.company && person.company.trim() !== '';
+      const hasTitle = person.title && person.title.trim() !== '';
+      
+      // Keep people that have at least a name and company, or if no company, at least a name and title
+      return hasName && (hasCompany || hasTitle);
+    });
+    
+    console.log(`Filtered people: ${filtered.length} out of ${normalized.length} (removed ${normalized.length - filtered.length} invalid entries)`);
+    
+    // Log some examples of filtered out people
+    const emptyEntries = normalized.filter(person => {
+      const hasName = person.fullName && person.fullName.trim() !== '';
+      const hasCompany = person.company && person.company.trim() !== '';
+      const hasTitle = person.title && person.title.trim() !== '';
+      return !(hasName && (hasCompany || hasTitle));
+    });
+    
+    if (emptyEntries.length > 0) {
+      console.log('Examples of people with no valid data:', emptyEntries.slice(0, 3));
+    }
+    
+    return filtered;
   };
 
   const handleFileUpload = async (file: File, type: 'companies' | 'people') => {
@@ -129,6 +199,10 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
       console.log(`Processing ${type} file:`, file.name, file.size, 'bytes');
       const data = await processFile(file);
       console.log(`Raw data received:`, data.length, 'rows');
+      
+      // Log first few rows for debugging
+      console.log('First 3 rows of raw data:', data.slice(0, 3));
+      
       let normalizedData: any[] = [];
       if (type === 'companies') {
         normalizedData = normalizeCompanyData(data);
@@ -174,6 +248,39 @@ export default function DataUpload({ onDataUpload }: DataUploadProps) {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Sample Data Download Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8"
+      >
+        <div className="flex items-start mb-4">
+          <Info className="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" />
+          <div>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Get Started with Sample Data</h3>
+            <p className="text-blue-700 mb-4">
+              Don't have your own datasets? Download our sample data to test the app immediately!
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => downloadSampleData('companies')}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Sample Companies
+              </button>
+              <button
+                onClick={() => downloadSampleData('people')}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Sample People
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Companies Upload */}
         <motion.div
