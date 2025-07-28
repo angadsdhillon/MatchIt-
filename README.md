@@ -77,6 +77,21 @@ SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
 BRIGHT_DATA_API_KEY=your_bright_data_api_key
 ```
 
+## Gemini AI Integration
+
+To enable the Ask Gemini chat feature:
+1. Obtain a Google Gemini API key (from Google AI Studio or your Google Cloud Console).
+2. In your project root, create a file named `.env.local` if it doesn't exist.
+3. Add the following line to `.env.local`:
+
+```
+GEMINI_API_KEY=your-gemini-api-key-here
+```
+
+4. Restart your development server after adding the key.
+
+The Gemini chat will then provide real answers instead of mock responses.
+
 ## Technology Stack
 
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript

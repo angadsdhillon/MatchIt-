@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Filter, Search, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { MergedData } from '../types';
 import { generateFilterOptions } from '../utils/dataProcessing';
+import GeminiChat from './GeminiChat';
 
 interface FilterPanelProps {
   data: MergedData[];
@@ -79,6 +80,8 @@ export default function FilterPanel({ data, filters, onFilterChange }: FilterPan
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
+      {/* Ask Gemini Chat */}
+      <GeminiChat />
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
