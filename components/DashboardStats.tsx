@@ -15,6 +15,9 @@ export default function DashboardStats({ data }: DashboardStatsProps) {
   const statCards = [
     {
       title: 'Total Companies',
+
+
+      
       value: stats.totalCompanies,
       icon: Building2,
       color: 'blue',

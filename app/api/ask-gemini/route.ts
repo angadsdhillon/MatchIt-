@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Function to search the web for current information (reused from ask-ai route)
+// Function to search the web for current information
 async function searchWeb(query: string): Promise<string> {
   try {
     const serperApiKey = process.env.SERPER_API_KEY;
@@ -21,6 +21,7 @@ async function searchWeb(query: string): Promise<string> {
     });
 
     if (!response.ok) {
+      console.error('Serper API error:', response.status, response.statusText);
       return "Web search temporarily unavailable.";
     }
 
@@ -72,46 +73,35 @@ export async function POST(req: NextRequest) {
 
   try {
     // Determine if we need web search for current/real-time information
-    const needsWebSearch = message.toLowerCase().includes('hq') || 
-                          message.toLowerCase().includes('headquarters') ||
-                          message.toLowerCase().includes('location') ||
-                          message.toLowerCase().includes('where') ||
+    const needsWebSearch = message.toLowerCase().includes('recent') ||
+                          message.toLowerCase().includes('latest') ||
+                          message.toLowerCase().includes('news') ||
+                          message.toLowerCase().includes('current') ||
+                          message.toLowerCase().includes('today') ||
+                          message.toLowerCase().includes('now') ||
+                          message.toLowerCase().includes('update') ||
+                          message.toLowerCase().includes('change') ||
                           message.toLowerCase().includes('ceo') ||
                           message.toLowerCase().includes('founder') ||
                           message.toLowerCase().includes('founded') ||
-                          message.toLowerCase().includes('founding') ||
                           message.toLowerCase().includes('employee') ||
-                          message.toLowerCase().includes('employees') ||
-                          message.toLowerCase().includes('headcount') ||
                           message.toLowerCase().includes('revenue') ||
                           message.toLowerCase().includes('funding') ||
-                          message.toLowerCase().includes('investors') ||
-                          message.toLowerCase().includes('recent') ||
-                          message.toLowerCase().includes('news') ||
-                          message.toLowerCase().includes('current') ||
-                          message.toLowerCase().includes('latest') ||
+                          message.toLowerCase().includes('competitor') ||
                           message.toLowerCase().includes('company') ||
-                          message.toLowerCase().includes('business') ||
-                          message.toLowerCase().includes('when') ||
-                          message.toLowerCase().includes('how many') ||
-                          message.toLowerCase().includes('size') ||
-                          message.toLowerCase().includes('industry') ||
-                          message.toLowerCase().includes('sector');
+                          message.toLowerCase().includes('business');
 
     let webSearchResults = "";
     if (needsWebSearch) {
       console.log('Performing web search for:', message);
-      // Improve search query construction
       let searchQuery = message;
       
       // Extract company name if mentioned in conversation history
       let companyName = "";
       if (conversationHistory.length > 0) {
-        // Look for company names in recent conversation
-        const recentMessages = conversationHistory.slice(-3); // Last 3 messages
+        const recentMessages = conversationHistory.slice(-3);
         for (const msg of recentMessages) {
           if (msg.sender === 'user') {
-            // Simple company name extraction (you can improve this)
             const words = msg.text.split(' ');
             for (let i = 0; i < words.length; i++) {
               if (words[i].match(/^[A-Z][a-z]+/) && !['What', 'Who', 'Where', 'When', 'How', 'Why', 'The', 'About', 'Their', 'This', 'That'].includes(words[i])) {
@@ -127,11 +117,10 @@ export async function POST(req: NextRequest) {
         }
       }
       
-      // If we found a company name, include it in the search
       if (companyName) {
         searchQuery = `${companyName} company ${message}`;
       } else {
-        searchQuery = `${message} company information`;
+        searchQuery = `${message} current information`;
       }
       
       webSearchResults = await searchWeb(searchQuery);
@@ -168,11 +157,7 @@ When web search results are provided, use that information as your primary sourc
 Always consider the conversation history and any provided web search results when formulating your response.`;
 
     // Build the full prompt with context
-    let fullPrompt = `${systemPrompt}\n\nCurrent question: ${message}`;
-
-    if (conversationContext) {
-      fullPrompt = `${systemPrompt}\n\n${conversationContext}Current question: ${message}`;
-    }
+    let fullPrompt = `${systemPrompt}\n\n${conversationContext}Current question: ${message}`;
 
     if (webSearchResults && webSearchResults !== "Web search not available - Serper API key not configured.") {
       fullPrompt += `\n\nWeb search results for current information:\n${webSearchResults}`;
@@ -181,7 +166,9 @@ Always consider the conversation history and any provided web search results whe
     fullPrompt += `\n\nPlease provide an accurate, concise answer based on the conversation context and any available web search results. If this is a follow-up question, make sure to reference the context from the previous conversation.`;
 
     console.log('Making request to Gemini API...');
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    
+    // Use the CORRECT Gemini API format without invalid tools field
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +179,7 @@ Always consider the conversation history and any provided web search results whe
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 800,
+          maxOutputTokens: 1000,
         }
       })
     });
@@ -208,6 +195,7 @@ Always consider the conversation history and any provided web search results whe
     const geminiData = await geminiRes.json();
     console.log('Gemini response received');
     const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer from Gemini.';
+    
     return NextResponse.json({ answer });
   } catch (err: any) {
     console.log('Exception caught:', err);

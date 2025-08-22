@@ -23,12 +23,12 @@ async function searchWeb(query: string): Promise<string> {
     });
 
     if (!response.ok) {
+      console.error('Serper API error:', response.status, response.statusText);
       return "Web search temporarily unavailable.";
     }
 
     const data = await response.json();
     
-    // Extract relevant information from search results
     let searchSummary = "Web search results:\n";
     
     if (data.organic && data.organic.length > 0) {
@@ -71,29 +71,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Groq API key not set. Please add GROQ_API_KEY to your .env.local file.' }, { status: 500 });
     }
 
-    // Determine if we need to search the web based on the question
-    const needsWebSearch = !message.toLowerCase().includes('employee') && 
-                          !message.toLowerCase().includes('founded') && 
-                          !message.toLowerCase().includes('industry') && 
-                          !message.toLowerCase().includes('location') &&
-                          (message.toLowerCase().includes('founder') ||
-                           message.toLowerCase().includes('ceo') ||
-                           message.toLowerCase().includes('news') ||
-                           message.toLowerCase().includes('recent') ||
-                           message.toLowerCase().includes('competitor') ||
-                           message.toLowerCase().includes('funding') ||
-                           message.toLowerCase().includes('revenue') ||
-                           message.toLowerCase().includes('good fit') ||
-                           message.toLowerCase().includes('recommend') ||
-                           message.toLowerCase().includes('should') ||
-                           !Object.values(company).some(val => 
-                             typeof val === 'string' && val.toLowerCase().includes(message.toLowerCase().split(' ')[0])
-                           ));
+    // SIMPLIFIED and more reliable web search detection
+    const needsWebSearch = message.toLowerCase().includes('recent') ||
+                          message.toLowerCase().includes('latest') ||
+                          message.toLowerCase().includes('news') ||
+                          message.toLowerCase().includes('current') ||
+                          message.toLowerCase().includes('today') ||
+                          message.toLowerCase().includes('now') ||
+                          message.toLowerCase().includes('update') ||
+                          message.toLowerCase().includes('change') ||
+                          message.toLowerCase().includes('founder') ||
+                          message.toLowerCase().includes('ceo') ||
+                          message.toLowerCase().includes('funding') ||
+                          message.toLowerCase().includes('competitor');
 
     let webSearchResults = "";
     if (needsWebSearch) {
       console.log('Performing web search for:', company.name);
-      const searchQuery = `${company.name} company ${message.toLowerCase().includes('founder') ? 'founder CEO' : ''} ${message.toLowerCase().includes('funding') ? 'funding investment' : ''} ${message.toLowerCase().includes('news') ? 'recent news' : ''}`;
+      const searchQuery = `${company.name} company ${message}`;
       webSearchResults = await searchWeb(searchQuery);
       console.log('Web search results:', webSearchResults);
     }
@@ -107,7 +102,12 @@ export async function POST(req: NextRequest) {
     - Combining internal data with external market intelligence
     - Offering insights on company culture, leadership, and business prospects
 
-    Always provide specific, actionable insights rather than just restating data.`;
+    IMPORTANT INSTRUCTIONS:
+    - Always provide specific, actionable insights rather than just restating data
+    - If web search results are available, use them to provide current information
+    - Be direct and helpful - avoid saying you can't help or don't have information
+    - Give concrete recommendations when possible
+    - Use both internal company data and web search results for comprehensive analysis`;
 
     // Compose the enhanced prompt with company context and web search results
     let prompt = `Company Data from Internal Database:
@@ -126,6 +126,7 @@ ${webSearchResults}`;
 3. Offers actionable recommendations when relevant
 4. Is specific and tailored to this company
 5. Considers sales and business development context
+6. Gives direct, helpful responses without saying you can't help
 
 Answer in a helpful, insightful, and professional manner.`;
 
@@ -143,7 +144,7 @@ Answer in a helpful, insightful, and professional manner.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 500,
+        max_tokens: 800,
         temperature: 0.7
       })
     });
