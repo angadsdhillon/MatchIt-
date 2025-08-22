@@ -72,24 +72,45 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Determine if we need web search for current/real-time information
-    const needsWebSearch = message.toLowerCase().includes('recent') ||
-                          message.toLowerCase().includes('latest') ||
-                          message.toLowerCase().includes('news') ||
-                          message.toLowerCase().includes('current') ||
-                          message.toLowerCase().includes('today') ||
-                          message.toLowerCase().includes('now') ||
-                          message.toLowerCase().includes('update') ||
-                          message.toLowerCase().includes('change') ||
-                          message.toLowerCase().includes('ceo') ||
-                          message.toLowerCase().includes('founder') ||
-                          message.toLowerCase().includes('founded') ||
-                          message.toLowerCase().includes('employee') ||
-                          message.toLowerCase().includes('revenue') ||
-                          message.toLowerCase().includes('funding') ||
-                          message.toLowerCase().includes('competitor') ||
-                          message.toLowerCase().includes('company') ||
-                          message.toLowerCase().includes('business');
+    // IMPROVED web search detection - more intelligent and comprehensive
+    const needsWebSearch = 
+      // Time-based triggers
+      message.toLowerCase().includes('recent') ||
+      message.toLowerCase().includes('latest') ||
+      message.toLowerCase().includes('news') ||
+      message.toLowerCase().includes('current') ||
+      message.toLowerCase().includes('today') ||
+      message.toLowerCase().includes('now') ||
+      message.toLowerCase().includes('update') ||
+      message.toLowerCase().includes('change') ||
+      // Company-specific triggers
+      message.toLowerCase().includes('ceo') ||
+      message.toLowerCase().includes('founder') ||
+      message.toLowerCase().includes('founded') ||
+      message.toLowerCase().includes('employee') ||
+      message.toLowerCase().includes('revenue') ||
+      message.toLowerCase().includes('funding') ||
+      message.toLowerCase().includes('competitor') ||
+      // Business intelligence triggers
+      message.toLowerCase().includes('company') ||
+      message.toLowerCase().includes('business') ||
+      message.toLowerCase().includes('industry') ||
+      message.toLowerCase().includes('market') ||
+      // Comparison and recommendation triggers
+      message.toLowerCase().includes('best') ||
+      message.toLowerCase().includes('top') ||
+      message.toLowerCase().includes('compare') ||
+      message.toLowerCase().includes('recommend') ||
+      message.toLowerCase().includes('which') ||
+      // General information triggers
+      message.toLowerCase().includes('what') ||
+      message.toLowerCase().includes('who') ||
+      message.toLowerCase().includes('where') ||
+      message.toLowerCase().includes('when') ||
+      message.toLowerCase().includes('how');
+
+    console.log('Web search needed?', needsWebSearch);
+    console.log('Message:', message);
 
     let webSearchResults = "";
     if (needsWebSearch) {
@@ -120,11 +141,22 @@ export async function POST(req: NextRequest) {
       if (companyName) {
         searchQuery = `${companyName} company ${message}`;
       } else {
-        searchQuery = `${message} current information`;
+        // For general questions, add context to make search more effective
+        if (message.toLowerCase().includes('best') || message.toLowerCase().includes('top')) {
+          searchQuery = `${message} companies 2024 current information`;
+        } else if (message.toLowerCase().includes('what') || message.toLowerCase().includes('which')) {
+          searchQuery = `${message} current information latest`;
+        } else {
+          searchQuery = `${message} current information`;
+        }
       }
       
+      console.log('Search query:', searchQuery);
       webSearchResults = await searchWeb(searchQuery);
-      console.log('Web search results obtained');
+      console.log('Web search results length:', webSearchResults.length);
+      console.log('Web search results preview:', webSearchResults.substring(0, 200));
+    } else {
+      console.log('Web search not triggered for this message');
     }
 
     // Build conversation context
